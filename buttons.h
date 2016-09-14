@@ -24,7 +24,7 @@
 // }
 
 
-#include "WProgram.h"
+#include "Arduino.h"
 
 #define PULL_UP 1
 #define PULL_DOWN 0
