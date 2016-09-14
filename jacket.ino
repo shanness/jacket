@@ -10,14 +10,14 @@
 #include "noise.cpp"
 
 // These are my specific LED strings
-#define LED_PIN     6
+#define LED_PIN     17
 #define CHIPSET     WS2812B
 #define COLOR_ORDER GRB
-#define NUM_LEDS    400
+#define NUM_LEDS    300  // Changed from 400 (not enough memory.
 
 // Reasonable for battery-powered jacket - use 300 if powering from only USB cable
-#define MAX_POWER 500  
-#define BRIGHTNESS  150
+#define MAX_POWER 300   // Was 500
+#define BRIGHTNESS  64 // Was 150
 
 // Sketches are tuned for this speed.  TODO: consistent framerate for sketches inside Animation class
 #define FRAMES_PER_SECOND 18
@@ -33,6 +33,26 @@ struct { int x; int y; } position[NUM_LEDS];
 #define HALF 5
 #define HALF_Y 6
 void get_xy_jacket(int i, int *x, int *y) {
+  int h = 12;
+  int baseNumber = 255;
+  if ( (i/25)%2 == 0 ) {
+    *x = 10 + (i-(i/25*25))  * 255 / 25 - HALF;
+  } else {
+    *x = 255 - (i-(i/25*25))  * 255 / 25 - HALF;
+  }
+//  if ( i < 25 ) {
+//    *x += 10;
+//  }
+  *y = (h * (i/25)) + HALF_Y;
+//  Serial.print("i=");
+//  Serial.print(i);
+//  Serial.print(", x=");
+//  Serial.print(*x);
+//  Serial.print(", y=");
+//  Serial.println(*y);
+}
+
+void old_get_xy_jacket(int i, int *x, int *y) {
   int h = 12;
   
   if (i < 25) {
@@ -141,6 +161,12 @@ void get_xy_jacket(int i, int *x, int *y) {
     *x = -1;
     *y = 255;
   }
+//  Serial.print("i=");
+//  Serial.print(i);
+//  Serial.print(", x=");
+//  Serial.print(*x);
+//  Serial.print(", y=");
+//  Serial.println(*y);
 }
 
 
@@ -152,7 +178,7 @@ fract8 animTransition;
 #define TIME_CYCLE 20000
 #define TIME_PAUSED ((unsigned long)-1)
 unsigned long nextAnimationTime = 0;
-int state = -1; // Start state
+int state = 1; // Start state
 
 void NextAnimation(int pin)
 {
@@ -174,7 +200,11 @@ void Pause(int pin)
 
 
 int leaveState(int i) {
+//  Serial.print(", ");
+//  Serial.print(state);
   i = (i+1) % 10;
+//  Serial.println("leaveState: ");
+//  Serial.println(i);
   return enterState( i );
 }
 
@@ -227,7 +257,7 @@ void setup() {
   
   // Teensy needs this?
   pinMode(13, OUTPUT);
-  // set_max_power_indicator_LED( 13); 
+   set_max_power_indicator_LED( 13); 
   
   Button.Configure(12, PULL_UP);
   Button.OnClick = NextAnimation;
@@ -239,14 +269,16 @@ void setup() {
   FastLED.setBrightness( BRIGHTNESS );
   FastLED.setDither( false );
   
-  Serial.println("started");
+  Serial.begin(9600);
+  Serial.print("started State = ");
+//  Serial.println(state);
 
   // Precalc all posiitons
   for (int i = 0; i < NUM_LEDS; i++) {  
     int x,y;
-    get_xy_jacket(i, &position[i].x, &position[i].y);
+    old_get_xy_jacket(i, &position[i].x, &position[i].y);
 
-    /* Debug positions:
+    /* Debug positions:*/
     Serial.print("#"); 
     Serial.print(i);
     Serial.print(": ");
@@ -254,7 +286,18 @@ void setup() {
     Serial.print(",");
     Serial.print(position[i].y);
     Serial.println();
-    */
+    int oldX = position[i].x;
+    int oldY = position[i].y;
+    get_xy_jacket(i, &position[i].x, &position[i].y);
+    if ( oldX != position[i].x || oldY != position[i].y) {
+      Serial.print("DIFF #"); 
+      Serial.print(i);
+      Serial.print(": ");
+      Serial.print(position[i].x);
+      Serial.print(",");
+      Serial.print(position[i].y);
+      Serial.println();
+    }
   }
 }
 
